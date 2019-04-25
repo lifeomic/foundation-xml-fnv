@@ -69,6 +69,12 @@ def calculate_other_gene(other_gene):
     return other_gene
 
 
+def cleanup_chromosome(chromosome):
+    if 'chr' in chromosome:
+        return chromosome
+    return chromosome.replace('ch', 'chr')
+
+
 def extract_fusion_variant(results_payload_dict):
     logger.info('Extracting fusion variants from xml')
     fusion_variant_list = {'FusionVariants': []}
@@ -84,10 +90,10 @@ def extract_fusion_variant(results_payload_dict):
                                         'gene1': fusion_variant['@target-gene'],
                                         'gene2': calculate_other_gene(fusion_variant['@other-gene']),
                                         'effect': calculate_effect(fusion_variant['@type']),
-                                        'chromosome1': fusion_variant['@pos1'].split(":")[0],
+                                        'chromosome1': cleanup_chromosome(fusion_variant['@pos1'].split(":")[0]),
                                         'start_position1': int(fusion_variant['@pos1'].split(":")[1].split("-")[0]),
                                         'end_position1': int(fusion_variant['@pos1'].split(":")[1].split("-")[1]),
-                                        'chromosome2': fusion_variant['@pos2'].split(":")[0],
+                                        'chromosome2': cleanup_chromosome(fusion_variant['@pos2'].split(":")[0]),
                                         'start_position2': int(fusion_variant['@pos2'].split(":")[1].split("-")[0]),
                                         'end_position2': int(fusion_variant['@pos2'].split(":")[1].split("-")[1]),
                                         'interpretation': calculate_interpretation(fusion_variant['@status']),
