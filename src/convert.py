@@ -17,24 +17,6 @@ def read_xml(xml_file):
         return xmltodict.parse(fd.read())
 
 
-def calculate_effect(fusion_type):
-    if fusion_type == 'fusion':
-        return 'fusion'
-    if fusion_type == 'rearrangement':
-        return 'rearrangement'
-    if fusion_type == 'truncation':
-        return 'truncation'
-    if fusion_type == 'deletion':
-        return 'deletion'
-    if fusion_type == 'duplication':
-        return 'duplication'
-    if fusion_type == 'unknown':
-        return 'unknown'
-
-    logger.error('Failed to resolve fusion variant type: %s', fusion_type)
-    return ''
-
-
 def calculate_interpretation(status):
     if status == 'known':
         return 'Pathogenic'
@@ -51,12 +33,8 @@ def calculate_interpretation(status):
 
 def gather_attributes(fusion):
     attributes = {}
-    if '@type' in fusion.keys():
-        attributes['type'] = fusion['@type']
     if '@equivocal' in fusion.keys():
         attributes['equivocal'] = fusion['@equivocal']
-    if '@in-frame' in fusion.keys():
-        attributes['in-frame'] = fusion['@in-frame']
     if '@supporting-read-pairs' in fusion.keys():
         attributes['supporting-read-pairs'] = fusion['@supporting-read-pairs']
 
@@ -75,6 +53,12 @@ def cleanup_chromosome(chromosome):
     return chromosome.replace('ch', 'chr')
 
 
+def get_value_or_default(value, default='N/A'):
+    if value:
+        return value
+    return default
+
+
 def extract_fusion_variant(results_payload_dict):
     logger.info('Extracting fusion variants from xml')
     fusion_variant_list = {'FusionVariants': []}
@@ -87,15 +71,16 @@ def extract_fusion_variant(results_payload_dict):
 
             for fusion_variant in fusion_variants:
                 fusion_variant_value = {'sample_id': fusion_variant['dna-evidence']['@sample'],
-                                        'gene1': fusion_variant['@target-gene'],
-                                        'gene2': calculate_other_gene(fusion_variant['@other-gene']),
-                                        'effect': calculate_effect(fusion_variant['@type']),
+                                        'gene1': get_value_or_default(fusion_variant['@targeted-gene']),
+                                        'gene2': get_value_or_default(fusion_variant['@other-gene']),
+                                        'effect': get_value_or_default(fusion_variant['@type'].lower()),
                                         'chromosome1': cleanup_chromosome(fusion_variant['@pos1'].split(":")[0]),
                                         'start_position1': int(fusion_variant['@pos1'].split(":")[1].split("-")[0]),
                                         'end_position1': int(fusion_variant['@pos1'].split(":")[1].split("-")[1]),
                                         'chromosome2': cleanup_chromosome(fusion_variant['@pos2'].split(":")[0]),
                                         'start_position2': int(fusion_variant['@pos2'].split(":")[1].split("-")[0]),
                                         'end_position2': int(fusion_variant['@pos2'].split(":")[1].split("-")[1]),
+                                        'in-frame': get_value_or_default(fusion_variant['@in-frame'].lower()),
                                         'interpretation': calculate_interpretation(fusion_variant['@status']),
                                         'sequence_type': 'somatic',
                                         'attributes': gather_attributes(fusion_variant)}
@@ -111,13 +96,13 @@ def write_fusions_to_fnv(fnv_dict, args):
         csv_writer = csv.writer(csvfile, delimiter=',')
         csv_writer.writerow(['sample_id', 'gene1', 'gene2', 'effect', 'chromosome1', 'start_position1', 'end_position1',
                              'chromosome2', 'start_position2', 'end_position2', 'interpretation',
-                             'sequence_type', 'attributes'])
+                             'sequence_type', 'in-frame', 'attributes'])
         for fnv in fnv_dict['FusionVariants']:
             csv_writer.writerow([fnv['sample_id'], fnv['gene1'], fnv['gene2'],
                                  fnv['effect'], fnv['chromosome1'], fnv['start_position1'],
                                  fnv['end_position1'], fnv['chromosome2'], fnv['start_position2'],
                                  fnv['end_position2'], fnv['interpretation'],
-                                 fnv['sequence_type'], fnv['attributes']])
+                                 fnv['sequence_type'], fnv['in-frame'], fnv['attributes']])
 
 
 def main():
