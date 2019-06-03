@@ -59,6 +59,21 @@ def get_value_or_default(value, default='N/A'):
     return default
 
 
+def extract_sample(samples):
+    if not samples:
+        return None
+
+    sample = samples.get('samples', {}).get('sample', {})
+    if isinstance(sample, list):
+        # Multiple sample (rna/dna) provided, find dna:
+        dna_samples = [s for s in sample if s.get('@nucleic-acid-type', None) == 'DNA']
+        if dna_samples:
+            return dna_samples[0].get('@name', None)
+        return None
+
+    return sample.get('@name', None)
+
+
 def extract_fusion_variant(results_payload_dict):
     logger.info('Extracting fusion variants from xml')
     fusion_variant_list = {'FusionVariants': []}
@@ -66,11 +81,12 @@ def extract_fusion_variant(results_payload_dict):
     if 'rearrangements' in results_payload_dict['variant-report'].keys():
         if (results_payload_dict['variant-report']['rearrangements'] is not None and
                 'rearrangement' in results_payload_dict['variant-report']['rearrangements'].keys()):
+            sample_id = extract_sample(results_payload_dict['variant-report'])
             variants_dict = results_payload_dict['variant-report']['rearrangements']['rearrangement']
             fusion_variants = variants_dict if isinstance(variants_dict, list) else [variants_dict]
 
             for fusion_variant in fusion_variants:
-                fusion_variant_value = {'sample_id': fusion_variant['dna-evidence']['@sample'],
+                fusion_variant_value = {'sample_id': fusion_variant.get('dna-evidence', {}).get('@sample', sample_id),
                                         'gene1': get_value_or_default(fusion_variant['@targeted-gene']),
                                         'gene2': get_value_or_default(fusion_variant['@other-gene']),
                                         'effect': get_value_or_default(fusion_variant['@type'].lower()),
