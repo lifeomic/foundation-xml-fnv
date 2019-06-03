@@ -67,7 +67,7 @@ def extract_sample(samples):
     if isinstance(sample, list):
         # Multiple sample (rna/dna) provided, find dna:
         dna_samples = [s for s in sample if s.get('@nucleic-acid-type', None) == 'DNA']
-        if dna_samples and len(dna_samples) >= 1:
+        if dna_samples:
             return dna_samples[0].get('@name', None)
         return None
 
