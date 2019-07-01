@@ -74,6 +74,18 @@ def extract_sample(samples):
     return sample.get('@name', None)
 
 
+def extract_start_position(fusion_variant, position):
+    if len(fusion_variant[position].split(":")[1].split("-")) > 1:
+        return int(fusion_variant[position].split(":")[1].split("-")[0])
+    return int(fusion_variant['@pos1'].split(":")[1].split("-")[0])
+
+
+def extract_end_position(fusion_variant, position):
+    if len(fusion_variant[position].split(":")[1].split("-")) > 1:
+        return int(fusion_variant[position].split(":")[1].split("-")[1])
+    return int(fusion_variant['@pos2'].split(":")[1].split("-")[0])
+
+
 def extract_fusion_variant(results_payload_dict):
     logger.info('Extracting fusion variants from xml')
     fusion_variant_list = {'FusionVariants': []}
@@ -91,11 +103,11 @@ def extract_fusion_variant(results_payload_dict):
                                         'gene2': get_value_or_default(fusion_variant['@other-gene']),
                                         'effect': get_value_or_default(fusion_variant['@type'].lower()),
                                         'chromosome1': cleanup_chromosome(fusion_variant['@pos1'].split(":")[0]),
-                                        'start_position1': int(fusion_variant['@pos1'].split(":")[1].split("-")[0]),
-                                        'end_position1': int(fusion_variant['@pos1'].split(":")[1].split("-")[1]),
+                                        'start_position1': extract_start_position(fusion_variant, '@pos1'),
+                                        'end_position1': extract_end_position(fusion_variant, '@pos1'),
                                         'chromosome2': cleanup_chromosome(fusion_variant['@pos2'].split(":")[0]),
-                                        'start_position2': int(fusion_variant['@pos2'].split(":")[1].split("-")[0]),
-                                        'end_position2': int(fusion_variant['@pos2'].split(":")[1].split("-")[1]),
+                                        'start_position2': extract_start_position(fusion_variant, '@pos2'),
+                                        'end_position2': extract_end_position(fusion_variant, '@pos2'),
                                         'in-frame': get_value_or_default(fusion_variant['@in-frame'].lower()),
                                         'interpretation': calculate_interpretation(fusion_variant['@status']),
                                         'sequence_type': 'somatic',
