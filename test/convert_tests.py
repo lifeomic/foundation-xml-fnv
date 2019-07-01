@@ -198,6 +198,51 @@ foundation_source_dict_with_multiple_samples_in_rearrangement = {
     }
 }
 
+expected_results_no_end_position = {
+    'FusionVariants': [{
+        'sample_id': 'SA-1612348',
+        'gene1': 'ERBB2',
+        'gene2': 'ERBB2',
+        'effect': 'rearrangement',
+        'chromosome1': 'chr17',
+        'start_position1': 29557687,
+        'end_position1': 29887856,
+        'chromosome2': 'chr17',
+        'start_position2': 29557687,
+        'end_position2': 29887856,
+        'interpretation': 'Uncertain significance',
+        'sequence_type': 'somatic',
+        'in-frame': 'unknown',
+        'attributes': {
+            'equivocal': 'false',
+            'supporting-read-pairs': 7
+        }
+    }]
+}
+
+foundation_source_dict_no_end_position = {
+    'variant-report': {
+        'rearrangements': {
+            'rearrangement': [
+                {
+                    '@equivocal': 'false',
+                    '@in-frame': 'unknown',
+                    '@other-gene': 'ERBB2',
+                    '@pos1': 'ch17:29557687',
+                    '@pos2': 'ch17:29887856',
+                    '@status': 'unknown',
+                    '@supporting-read-pairs': 7,
+                    '@targeted-gene': 'ERBB2',
+                    '@type': 'rearrangement',
+                    'dna-evidence': {
+                        '@sample': 'SA-1612348'
+                    }
+                }
+            ]
+        }
+    }
+}
+
 class ConvertTest(TestCase):
 
     def test_convert_no_other_gene(self):
@@ -228,6 +273,12 @@ class ConvertTest(TestCase):
         print(fnv_resources)
         self.maxDiff = None
         self.assertDictEqual(expected_results_with_multiple_samples, fnv_resources)
+
+    def test_no_end_position(self):
+        fnv_resources = extract_fusion_variant(foundation_source_dict_no_end_position)
+        print(fnv_resources)
+        self.maxDiff = None
+        self.assertDictEqual(expected_results_no_end_position, fnv_resources)
 
     def test_gather_attributes(self):
         copy_number = {
